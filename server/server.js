@@ -37,7 +37,11 @@ function classify(cards) {
   if (cards.length === 3 && same && values[0] === 6) return { type: "smallCannon", level: 2, value: 6 };
   if (same && cards.length === 3) return { type: "triple", level: 1, value: values[0] };
   if (same && cards.length === 2) return { type: "pair", level: 1, value: values[0] };
-  if (cards.length >= 3 && values.every((value, index) => index === 0 || value === values[index - 1] + 1) && !values.includes(15)) return { type: `straight${cards.length}`, level: 1, value: values.at(-1) };
+  const isStraight = cards.length >= 3
+    && !values.includes(2)
+    && !values.includes(3)
+    && values.every((value, index) => index === 0 || value === values[index - 1] + 1);
+  if (isStraight) return { type: `straight${cards.length}`, level: 1, value: values.at(-1) };
   if (cards.length === 1) return { type: "single", level: 1, value: values[0] };
   return null;
 }
