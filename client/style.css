@@ -1,0 +1,12 @@
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px; color: #f8f4ea; background: radial-gradient(circle at top, #345c55, #132f32 65%); font-family: system-ui, sans-serif; }
+.card { width: min(100%, 420px); padding: 34px 24px; text-align: center; border: 1px solid #ffffff2b; border-radius: 24px; background: #102629dd; box-shadow: 0 20px 60px #06151788; }
+.logo { color: #d9b46b; font-size: 26px; letter-spacing: 8px; }
+h1 { margin: 18px 0 6px; font-size: 30px; }
+.subtitle { margin: 0 0 28px; color: #b8c9c2; }
+.status { padding: 12px; border-radius: 12px; background: #254d4b; color: #dce9d9; }
+.room { margin-top: 20px; padding: 20px; border-radius: 16px; background: #ffffff12; }
+.room-title { color: #d9b46b; font-weight: 700; }
+.players { margin: 14px 0; font-size: 24px; font-weight: 700; }
+.hint, .next { color: #aec0bb; font-size: 14px; line-height: 1.6; }
+.next { margin: 24px 0 0; }
