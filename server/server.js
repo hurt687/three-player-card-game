@@ -27,6 +27,21 @@ function createDeck() {
 }
 
 function shuffle(cards) { return cards.sort(() => Math.random() - 0.5); }
+const rankValue = { A: 14, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, J: 11, Q: 12, K: 13 };
+function classify(cards) {
+  const values = cards.map((card) => rankValue[card.chosenRank || card.rank]).sort((a, b) => a - b);
+  const same = values.every((value) => value === values[0]);
+  if (cards.length === 4 && same) return { type: "star", level: 5, value: values[0] };
+  if (cards.length === 3 && values[0] === 14 && values[1] === 4 && values[2] === 4) return { type: "pierce", level: 4, value: 14 };
+  if (cards.length === 3 && same && values[0] === 12) return { type: "cannon", level: 3, value: 12 };
+  if (cards.length === 3 && same && values[0] === 6) return { type: "smallCannon", level: 2, value: 6 };
+  if (same && cards.length === 3) return { type: "triple", level: 1, value: values[0] };
+  if (same && cards.length === 2) return { type: "pair", level: 1, value: values[0] };
+  if (cards.length >= 3 && values.every((value, index) => index === 0 || value === values[index - 1] + 1) && !values.includes(15)) return { type: `straight${cards.length}`, level: 1, value: values.at(-1) };
+  if (cards.length === 1) return { type: "single", level: 1, value: values[0] };
+  return null;
+}
+function canBeat(previous, next) { return !previous || next.level > previous.level || (next.level === previous.level && next.type === previous.type && next.value > previous.value); }
 function publicState() {
   return { type: "state", count: players.size, started: game.started, turn: game.turn,
     lastPlay: game.lastPlay, players: [...players.values()].map((number) => ({ player: number, cards: game.hands.get(number)?.length || 0 })) };
@@ -48,11 +63,16 @@ webSocketServer.on("connection", (socket) => {
   socket.on("message", (raw) => {
     let message; try { message = JSON.parse(raw); } catch { return; }
     if (message.type !== "play" || !game.started || number !== game.turn) return;
-    const hand = game.hands.get(number) || []; const index = Number(message.index);
-    if (!Number.isInteger(index) || !hand[index]) return;
-    const card = hand[index];
-    if (card.joker && !["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"].includes(message.asRank)) return;
-    hand.splice(index, 1); game.lastPlay = { player: number, card: { ...card, chosenRank: card.joker ? message.asRank : null } };
+    const hand = game.hands.get(number) || []; const indexes = Array.isArray(message.indexes) ? message.indexes : [message.index];
+    if (!indexes.length || indexes.some((index) => !Number.isInteger(index) || !hand[index])) return;
+    const selected = indexes.map((index) => ({ ...hand[index] }));
+    const chosenRank = message.asRank;
+    if (selected.some((card) => card.joker) && !chosenRank) return;
+    selected.forEach((card) => { if (card.joker) card.chosenRank = chosenRank; });
+    const combo = classify(selected);
+    if (!combo || !canBeat(game.lastPlay?.combo, combo)) return;
+    indexes.sort((a, b) => b - a).forEach((index) => hand.splice(index, 1));
+    game.lastPlay = { player: number, cards: selected, combo };
     game.turn = (number % 3) + 1; sendState();
     for (const [client, owner] of players) sendHand(client, owner);
     if (hand.length === 0) { game.started = false; for (const client of players.keys()) client.send(JSON.stringify({ type: "winner", player: number })); }
