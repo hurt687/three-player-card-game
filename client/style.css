@@ -3,6 +3,11 @@
 .dialog-box { width:min(90%,360px); padding:24px; border-radius:18px; background:#123f3d; text-align:center; }
 #jokerOptions { display:flex; flex-wrap:wrap; justify-content:center; }
 .sheath-top { display:flex; align-items:center; gap:12px; margin:14px 0; padding:12px 16px; border:1px solid #e8c77c66; border-radius:14px; background:#e8c77c18; color:#f5d995; }
+.table-card { width:48px; height:70px; display:inline-flex; flex-direction:column; align-items:center; justify-content:center; margin:0 3px; border:2px solid #e8e1ce; border-radius:8px; background:#fffdf4; color:#17272a; box-shadow:0 5px 14px #0006; }
+.table-card.small { width:34px; height:48px; } .table-card small { font-size:15px; } .table-card b { font-size:19px; } .table-card.red { color:#c73535; }
+.played-cards { min-height:86px; display:flex; align-items:center; justify-content:center; gap:4px; margin-top:12px; } .played-label { min-height:22px; color:var(--gold); font-weight:700; }
+@media (orientation: landscape) and (min-width: 700px) { body { padding:8px 18px; } .table { width:min(100%, 1240px); min-height:96vh; padding:14px 28px; } .opponents { position:relative; display:block; height:0; } .player { position:absolute; top:70px; width:160px; } .player.left { left:0; } .player.right { right:0; } .play-area { min-height:230px; margin:8px 180px 12px; } .hand-panel { padding:0 130px; } }
+.sheath-top { display:flex; align-items:center; gap:12px; margin:14px 0; padding:12px 16px; border:1px solid #e8c77c66; border-radius:14px; background:#e8c77c18; color:#f5d995; }
 .sheath-top strong { letter-spacing:2px; }
 .played-cards { min-height:92px; display:flex; align-items:center; justify-content:center; gap:8px; margin-top:14px; }
 .played-card { width:48px; height:70px; display:flex; flex-direction:column; align-items:center; justify-content:center; border:2px solid #e8e1ce; border-radius:8px; background:#fffdf4; color:#17272a; box-shadow:0 5px 14px #0006; }
