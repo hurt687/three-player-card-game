@@ -1,14 +1,1 @@
-<!doctype html>
-<html lang="zh-CN">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>三人卡牌游戏</title><link rel="stylesheet" href="style.css"></head>
-<body>
-  <main class="table">
-    <header><div><div class="eyebrow">CARD TABLE · 01</div><h1>三人卡牌游戏</h1></div><div class="badge" id="room">等待玩家 0/3</div></header>
-    <div class="status" id="status">正在连接房间…</div>
-    <section class="opponents"><div class="player"><span>玩家 2</span><b id="p2">等待中</b></div><div class="player"><span>玩家 3</span><b id="p3">等待中</b></div></section>
-    <section class="play-area"><div class="turn" id="turn">三人到齐后自动发牌</div><div class="last-play" id="lastPlay">还没有出牌</div><div class="sheath" id="sheath">剑鞘：等待抽牌</div><div class="sword-actions" id="swordActions"><button id="acceptSword">成为剑客</button><button id="passSword">拒绝</button></div></section>
-    <section class="hand-panel"><div class="hand-title"><span>我的手牌</span><b id="handCount">0 张</b></div><div class="hand" id="hand"></div></section>
-    <section class="controls"><label>大小王转成：</label><select id="jokerRank"><option>A</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>J</option><option>Q</option><option>K</option></select><button id="playButton">出牌</button></section>
-    <p class="hint">玩法：轮到你时点击一张牌，再点击“出牌”。当前版本先支持单张牌。</p>
-  </main><script src="game.js"></script>
-</body></html>
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>三人卡牌游戏</title><link rel="stylesheet" href="style.css"></head><body><main class="table"><header><div><div class="eyebrow">CARD TABLE · 01</div><h1>三人卡牌游戏</h1></div><div class="badge" id="room">房间 0/3</div></header><div class="status" id="status">正在连接房间…</div><section class="opponents"><div class="player">玩家2 <b id="p2">未加入</b></div><div class="player">玩家3 <b id="p3">未加入</b></div></section><section class="play-area"><div class="turn" id="turn">三人都准备后开始</div><div id="lastPlay">还没有出牌</div><div class="sheath" id="sheath">剑鞘：等待抽牌</div><div class="sword-actions" id="swordActions"><button id="acceptSword">成为剑客</button><button id="passSword">拒绝</button></div></section><section class="hand-panel"><div class="hand-title"><span>我的手牌</span><b id="handCount">0 张</b></div><div class="hand" id="hand"></div></section><section class="controls"><button id="readyButton">准备</button><button id="playButton">出牌</button></section><div class="joker-dialog" id="jokerDialog"><div class="dialog-box"><h2>大小王转换</h2><p>请选择转换点数</p><div id="jokerOptions"></div><button id="cancelJoker">取消</button></div></div><p class="hint">点击牌可多选；点击大小王会弹出转换选择。牌会自动整理。</p></main><script src="game.js"></script></body></html>

@@ -1,29 +1,4 @@
-const status = document.querySelector("#status");
-const room = document.querySelector("#room");
-const handElement = document.querySelector("#hand");
-const handCount = document.querySelector("#handCount");
-const turnElement = document.querySelector("#turn");
-const lastPlay = document.querySelector("#lastPlay");
-const sheath = document.querySelector("#sheath");
-const swordActions = document.querySelector("#swordActions");
-const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`);
-let playerNumber = 0; let cards = []; let selectedIndex = null;
-const redSuits = new Set(["♥", "♦"]);
-function cardName(card) { return card.joker ? `${card.rank}→${card.chosenRank || "?"}` : `${card.suit}${card.rank}`; }
-function renderHand() {
-  handElement.innerHTML = ""; handCount.textContent = `${cards.length} 张`;
-  cards.forEach((card, index) => { const button = document.createElement("button"); button.className = `playing-card ${redSuits.has(card.suit) ? "red" : ""} ${selectedIndex === index ? "selected" : ""}`; button.innerHTML = `<span>${card.suit}</span><strong>${card.rank}</strong>`; button.onclick = () => { selectedIndex = index; renderHand(); }; handElement.appendChild(button); });
-}
-socket.onopen = () => { status.textContent = "已连接，等待其他玩家加入"; };
-socket.onmessage = (event) => { const data = JSON.parse(event.data);
-  if (data.type === "welcome") { playerNumber = data.player; status.textContent = `你是玩家 ${playerNumber}`; }
-  if (data.type === "hand") { cards = data.cards; selectedIndex = null; renderHand(); }
-  if (data.type === "state") { room.textContent = `房间 ${data.count}/3`; data.players.forEach((player) => { const element = document.querySelector(`#p${player.player}`); if (element) element.textContent = `${player.cards} 张牌`; }); turnElement.textContent = data.phase === "sword-choice" ? (data.turn === playerNumber ? "轮到你决定是否成为剑客" : `玩家 ${data.turn} 正在选择剑客`) : (data.started ? (data.turn === playerNumber ? "轮到你出牌" : `轮到玩家 ${data.turn}`) : "等待三人开始"); sheath.textContent = data.sheath?.length ? `剑鞘：${data.sheath.map(cardName).join("  ")}` : (data.phase === "playing" ? `剑鞘已归玩家 ${data.sheathOwner}` : "剑鞘：等待抽牌"); swordActions.style.display = data.phase === "sword-choice" && data.turn === playerNumber ? "flex" : "none"; if (data.lastPlay) lastPlay.textContent = `玩家 ${data.lastPlay.player} 打出 ${data.lastPlay.cards.map(cardName).join(" ")}`; if (data.count === 3 && data.phase === "playing") status.textContent = "游戏开始！"; }
-  if (data.type === "started") status.textContent = "已发牌，每人18张";
-  if (data.type === "winner") status.textContent = `玩家 ${data.player} 获胜！`;
-  if (data.type === "full") status.textContent = "房间已满";
-};
-document.querySelector("#playButton").onclick = () => { if (selectedIndex === null) { status.textContent = "请先选择牌"; return; } socket.send(JSON.stringify({ type: "play", indexes: [selectedIndex], asRank: document.querySelector("#jokerRank").value })); };
-document.querySelector("#acceptSword").onclick = () => socket.send(JSON.stringify({ type: "sword-choice", accept: true }));
-document.querySelector("#passSword").onclick = () => socket.send(JSON.stringify({ type: "sword-choice", accept: false }));
-socket.onerror = () => { status.textContent = "连接失败，请检查服务器"; };
+const $ = (s) => document.querySelector(s); const socket = new WebSocket(`${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`); let player = 0; let cards = []; let selected = new Set(); let jokerRank = null; const ranks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"]; const red = new Set(["♥","♦"]);
+function label(card) { return card.joker ? `${card.rank}${card.chosenRank ? `→${card.chosenRank}` : ""}` : `${card.suit}${card.rank}`; }
+function render() { $("#hand").innerHTML = ""; $("#handCount").textContent = `${cards.length} 张`; cards.forEach((card, i) => { const button = document.createElement("button"); button.className = `playing-card ${red.has(card.suit) ? "red" : ""} ${selected.has(i) ? "selected" : ""}`; button.innerHTML = `<span>${card.suit}</span><strong>${card.rank}</strong>`; button.onclick = () => { if (card.joker) { $("#jokerDialog").style.display = "grid"; $("#jokerOptions").innerHTML = ""; ranks.forEach((rank) => { const option = document.createElement("button"); option.textContent = rank; option.onclick = () => { jokerRank = rank; selected.add(i); $("#jokerDialog").style.display = "none"; render(); }; $("#jokerOptions").appendChild(option); }); } else { selected.has(i) ? selected.delete(i) : selected.add(i); render(); } }; $("#hand").appendChild(button); }); }
+socket.onopen = () => { $("#status").textContent = "已连接，等待三位玩家"; }; socket.onmessage = (event) => { const d = JSON.parse(event.data); if (d.type === "welcome") { player = d.player; $("#status").textContent = `你是玩家 ${player}`; } if (d.type === "hand") { cards = d.cards; selected.clear(); render(); } if (d.type === "state") { $("#room").textContent = `房间 ${d.count}/3`; d.players.forEach((p) => { const e = $(`#p${p.player}`); if (e) e.textContent = `${p.cards} 张${d.ready.includes(p.player) ? " · 已准备" : ""}`; }); $("#readyButton").disabled = d.phase !== "waiting" || d.ready.includes(player); $("#readyButton").textContent = d.ready.includes(player) ? "已准备" : "准备"; $("#turn").textContent = d.phase === "waiting" ? "三人都准备后开始" : d.phase === "sword-choice" ? (d.turn === player ? "轮到你选择是否成为剑客" : `玩家${d.turn}正在选择`) : d.turn === player ? "轮到你出牌" : `轮到玩家${d.turn}`; $("#sheath").textContent = d.sheath.length ? `剑鞘：${d.sheath.map(label).join("  ")}` : "剑鞘已归剑客"; $("#swordActions").style.display = d.phase === "sword-choice" && d.turn === player ? "flex" : "none"; } if (d.type === "started") $("#status").textContent = "发牌完成，每人17张，剑鞘已公开"; if (d.type === "winner") $("#status").textContent = `玩家${d.player}获胜！`; if (d.type === "full") $("#status").textContent = "房间已满"; }; $("#readyButton").onclick = () => socket.send(JSON.stringify({ type: "ready" })); $("#acceptSword").onclick = () => socket.send(JSON.stringify({ type: "sword", accept: true })); $("#passSword").onclick = () => socket.send(JSON.stringify({ type: "sword", accept: false })); $("#playButton").onclick = () => { if (selected.size) socket.send(JSON.stringify({ type: "play", indexes: [...selected], jokerRank })); }; $("#cancelJoker").onclick = () => { $("#jokerDialog").style.display = "none"; jokerRank = null; }; socket.onerror = () => { $("#status").textContent = "连接失败，请检查服务器"; };

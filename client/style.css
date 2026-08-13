@@ -1,4 +1,7 @@
 :root { color-scheme: dark; --felt: #123f3d; --gold: #e8c77c; }
+.joker-dialog { display:none; position:fixed; inset:0; place-items:center; background:#0009; z-index:5; }
+.dialog-box { width:min(90%,360px); padding:24px; border-radius:18px; background:#123f3d; text-align:center; }
+#jokerOptions { display:flex; flex-wrap:wrap; justify-content:center; }
 * { box-sizing: border-box; } body { margin: 0; min-height: 100vh; padding: 16px; color: #f8f2e6; background: radial-gradient(circle at top, #28645a, #081f26 72%); font-family: system-ui, sans-serif; }
 .table { width: min(100%, 720px); margin: auto; padding: 20px; border: 1px solid #ffffff2b; border-radius: 24px; background: #0b2a2ddd; box-shadow: 0 24px 80px #020b0dcc; }
 header, .hand-title, .controls { display: flex; align-items: center; justify-content: space-between; gap: 12px; } h1 { margin: 3px 0 0; font-size: clamp(24px, 6vw, 36px); } .eyebrow { color: var(--gold); font-size: 11px; letter-spacing: 2px; } .badge, .status { padding: 9px 12px; border-radius: 999px; background: #ffffff12; color: #dbe8dd; font-size: 13px; }
