@@ -17,7 +17,7 @@ const httpServer = http.createServer((request, response) => {
 
 const webSocketServer = new WebSocket.Server({ server: httpServer });
 const players = new Map();
-let game = { started: false, hands: new Map(), turn: 1, lastPlay: null };
+let game = { started: false, phase: "waiting", hands: new Map(), sheath: [], sheathOwner: 0, swordChoices: [], turn: 1, lastPlay: null };
 
 function createDeck() {
   const suits = ["♠", "♥", "♦", "♣"];
@@ -47,16 +47,26 @@ function classify(cards) {
 }
 function canBeat(previous, next) { return !previous || next.level > previous.level || (next.level === previous.level && next.type === previous.type && next.value > previous.value); }
 function publicState() {
-  return { type: "state", count: players.size, started: game.started, turn: game.turn,
-    lastPlay: game.lastPlay, players: [...players.values()].map((number) => ({ player: number, cards: game.hands.get(number)?.length || 0 })) };
+  return { type: "state", count: players.size, started: game.started, phase: game.phase, turn: game.turn,
+    sheath: game.sheath, sheathOwner: game.sheathOwner, swordChoices: game.swordChoices, lastPlay: game.lastPlay,
+    players: [...players.values()].map((number) => ({ player: number, cards: game.hands.get(number)?.length || 0 })) };
 }
 function sendState() { const state = publicState(); for (const socket of players.keys()) socket.send(JSON.stringify(state)); }
 function sendHand(socket, number) { socket.send(JSON.stringify({ type: "hand", cards: game.hands.get(number) || [] })); }
 function startGame() {
-  const deck = shuffle(createDeck()); game = { started: true, hands: new Map(), turn: 1, lastPlay: null };
-  for (let number = 1; number <= 3; number += 1) game.hands.set(number, deck.splice(0, 18));
+  const deck = shuffle(createDeck()); game = { started: true, phase: "dealing", hands: new Map([[1, []], [2, []], [3, []]]), sheath: deck.splice(0, 3), sheathOwner: 0, swordChoices: [], turn: 1, lastPlay: null };
+  for (let index = 0; index < deck.length; index += 1) game.hands.get((index % 3) + 1).push(deck[index]);
+  const sheathOwner = [...game.hands.entries()].find(([, hand]) => hand.some((card) => card.suit === "♥" && card.rank === "4"))?.[0] || 1;
+  game.sheathOwner = sheathOwner;
+  game.phase = "sword-choice"; game.turn = sheathOwner;
   for (const [socket, number] of players) { socket.send(JSON.stringify({ type: "started" })); sendHand(socket, number); }
   sendState();
+}
+
+function finishSwordChoice(number) {
+  game.phase = "playing"; game.turn = number;
+  game.hands.get(number).push(...game.sheath); game.sheath = [];
+  sendState(); for (const [client, owner] of players) sendHand(client, owner);
 }
 
 webSocketServer.on("connection", (socket) => {
@@ -66,7 +76,13 @@ webSocketServer.on("connection", (socket) => {
   if (players.size === 3 && !game.started) startGame();
   socket.on("message", (raw) => {
     let message; try { message = JSON.parse(raw); } catch { return; }
-    if (message.type !== "play" || !game.started || number !== game.turn) return;
+    if (message.type === "sword-choice" && game.phase === "sword-choice" && number === game.turn) {
+      if (message.accept) { finishSwordChoice(number); return; }
+      game.swordChoices.push(number); const next = [1, 2, 3].find((candidate) => candidate !== number && !game.swordChoices.includes(candidate));
+      if (next) game.turn = next; else finishSwordChoice(game.sheathOwner);
+      sendState(); return;
+    }
+    if (message.type !== "play" || !game.started || game.phase !== "playing" || number !== game.turn) return;
     const hand = game.hands.get(number) || []; const indexes = Array.isArray(message.indexes) ? message.indexes : [message.index];
     if (!indexes.length || indexes.some((index) => !Number.isInteger(index) || !hand[index])) return;
     const selected = indexes.map((index) => ({ ...hand[index] }));
@@ -81,7 +97,7 @@ webSocketServer.on("connection", (socket) => {
     for (const [client, owner] of players) sendHand(client, owner);
     if (hand.length === 0) { game.started = false; for (const client of players.keys()) client.send(JSON.stringify({ type: "winner", player: number })); }
   });
-  socket.on("close", () => { players.delete(socket); game = { started: false, hands: new Map(), turn: 1, lastPlay: null }; sendState(); });
+  socket.on("close", () => { players.delete(socket); game = { started: false, phase: "waiting", hands: new Map(), sheath: [], sheathOwner: 0, swordChoices: [], turn: 1, lastPlay: null }; sendState(); });
 });
 
 const port = Number(process.env.PORT) || 3000;
